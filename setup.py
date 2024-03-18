@@ -4,11 +4,11 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 st.setup(
-    name='canopy',
+    name='cartographer',
     version='1',
-    description='A Naive Bayes model-based reinforcement learning algorithm',
-    url='https://codeberg.com/brohrer/canopy',
-    download_url='https://gitlab.com/brohrer/canopy/tags/',
+    description='A naive Bayes Markov decision process learner',
+    url='https://codeberg.com/brohrer/cartographer',
+    download_url='https://gitlab.com/brohrer/cartographer/tags/',
     author='Brandon Rohrer',
     author_email='brohrer@gmail.com',
     license='MIT',
@@ -24,7 +24,7 @@ st.setup(
             "README.md",
             "LICENSE",
         ],
-        "canopy": [],
+        "cartographer": [],
     },
     classifiers=[
         "Programming Language :: Python :: 3",
