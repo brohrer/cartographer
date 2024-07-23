@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cartographer"
+version = "2"
+authors = [
+  { name="Brandon Rohrer", email="brohrer@gmail.com" },
+]
+description="A naive Bayes Markov decision process learner"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "matplotlib",
+    "numba",
+    "numpy",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Documentation = "https://codeberg.org/brohrer/cartographer-paper/raw/branch/main/cartographer.pdf"
+README = "https://codeberg.org/brohrer/cartographer/src/branch/main/README.md"
+Repository = "https://codeberg.org/brohrer/cartographer.git"
+
+[tool.flake8]
+max-line-length = 88
+
+# [tool.pytest.ini_options]
+# addopts = [
+#     "--import-mode=importlib",
+# ]
+

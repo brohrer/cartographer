@@ -1,5 +1,4 @@
 import numpy as np
-from numba import njit
 
 
 class NaiveCartographer(object):
@@ -17,7 +16,7 @@ class NaiveCartographer(object):
         n_actions=None,
         n_rewards=1,
         feature_decay_rate=0.35,
-        reward_update_rate=0.01,  # a.k.a. learning_rate
+        reward_update_rate=0.3,  # a.k.a. learning_rate
     ):
         self.n_features = n_sensors
         self.feature_activities = np.zeros(self.n_features)
@@ -83,43 +82,29 @@ class NaiveCartographer(object):
         aged_activities = self.feature_activities * (1 - self.feature_decay_rate)
         self.feature_activities = np.maximum(feature_activities, aged_activities)
 
-        # Update transition counts and probabilities.
-        i_sensors, i_actions = np.where(self.s_a_activities > self.activity_threshold)
-        i_outcomes = np.where(outcome_activities > self.activity_threshold)[0]
-        if i_sensors.size > 0 and i_actions.size > 0 and i_outcomes.size > 0:
-            for i_sensor, i_action in zip(i_sensors, i_actions):
-                for i_outcome in i_outcomes:
-                    self.s_a_s_occurrences[i_sensor, i_action, i_outcome] += (
-                        self.s_a_activities[i_sensor, i_action]
-                        * outcome_activities[i_outcome]
-                    )
+        # Update transition counts and probabilities
+        new_s_a_s_occurrences = (
+            self.s_a_activities[:, :, np.newaxis]
+            * outcome_activities[np.newaxis, np.newaxis, :]
+        )
+        self.s_a_s_occurrences = self.s_a_s_occurrences + new_s_a_s_occurrences
 
-        # Update the reward.
-        # Handles either single or multiple rewards.
-
-        # Adding uncertainties to the reward update rate has the affect of
-        # accelerating reward learning in early iterations when there
-        # is a dearth of information. It speeds up initial learning
-        # considerably, but still allows the model to fall into
-        # more incremental reward learning as it matures.
-        reward_update_rate = self.reward_update_rate + self.s_a_uncertainties
-
+        # Update the reward
+        # The logic for handling single or multiple rewards.
         if self.n_rewards > 1:
-            # Multiple reward case
             rewards = list(rewards)
             for i_reward, reward in enumerate(rewards):
                 if reward is not None:
                     delta_reward = reward - self.s_a_rewards[:, :, i_reward]
                     self.s_a_rewards[:, :, i_reward] += (
-                        delta_reward * self.s_a_activities * reward_update_rate
+                        delta_reward * self.s_a_activities * self.reward_update_rate
                     )
         else:
-            # Single reward case
             if rewards is not None:
                 i_reward = 0
                 delta_reward = rewards - self.s_a_rewards[:, :, i_reward]
                 self.s_a_rewards[:, :, i_reward] += (
-                    delta_reward * self.s_a_activities * reward_update_rate
+                    delta_reward * self.s_a_activities * self.reward_update_rate
                 )
 
     def update_actions(self, actions):
@@ -139,8 +124,11 @@ class NaiveCartographer(object):
             self.feature_activities[:, np.newaxis] * self.actions[np.newaxis, :]
         )
         self.s_a_activities = np.maximum(new_s_a_activities, self.s_a_activities)
-        self.s_a_occurrences += self.s_a_activities
-        self.s_a_uncertainties = 1 / (1 + self.s_a_occurrences)
+        self.s_a_occurrences = self.s_a_occurrences + self.s_a_activities
+        # self.s_a_uncertainties = 1 / (1 + self.s_a_occurrences)
+        # Empirical investigation with a pendulum world suggests that
+        # 1 / n**2 gives faster convergence and better overall results.
+        self.s_a_uncertainties = 1 / (1 + self.s_a_occurrences**2)
 
     def predict(self, sensors=None, i_action=None):
         """
@@ -165,31 +153,19 @@ class NaiveCartographer(object):
     def _get_conditional_predictions(self, sensors):
         # Conditional predictions represent "what if" scenarios for every
         # possible action. It has the shape (n_actions, n_outcomes)
-        conditional_predictions = np.zeros((self.n_actions, self.n_outcomes))
-        make_conditional_predictions(
-            self.activity_threshold,
-            conditional_predictions,
-            sensors,
-            self.s_a_s_occurrences,
-            self.s_a_occurrences,
+        s_a_s_likelihoods = self.s_a_s_occurrences / (
+            self.s_a_occurrences[:, :, np.newaxis] + 1
+        )
+        conditional_predictions = np.max(
+            sensors[:, np.newaxis, np.newaxis] * s_a_s_likelihoods, axis=0
         )
 
         # Predict reward
-        #
-        # Method 1: Weighted average
         # Start with a weighted average of all expected rewards, where the
         # weights are the feature activities.
-        # conditional_multi_rewards = np.sum(
-        #     sensors[:, np.newaxis, np.newaxis] * self.s_a_rewards, axis=0
-        # ) / (np.sum(sensors) + self.epsilon)
-        #
-        # Method 2: Maximum
-        # Find the maximum expected reward across all features.
-        # This works well on the One-hot conditional bandit.
-        conditional_multi_rewards = np.max(
+        conditional_multi_rewards = np.sum(
             sensors[:, np.newaxis, np.newaxis] * self.s_a_rewards, axis=0
-        )
-        # Finally, sum across all rewards.
+        ) / (np.sum(sensors) + self.epsilon)
         conditional_rewards = np.sum(conditional_multi_rewards, axis=1)
 
         # Find uncertainty associated with each action
@@ -217,26 +193,3 @@ class NaiveCartographer(object):
         uncertainty = np.max(sensors * self.s_a_uncertainties[:, i_action])
 
         return predictions, predicted_reward, uncertainty
-
-
-@njit
-def make_conditional_predictions(
-    activity_threshold,
-    predictions,
-    sensors,
-    s_a_s_occurrences,
-    s_a_occurrences,
-):
-    n_features, n_actions, n_outcomes = s_a_s_occurrences.shape
-    i_sensors = np.where(sensors > activity_threshold)[0]
-    for i_action in range(n_actions):
-        for i_outcome in range(n_outcomes):
-            max_val = -1e10
-            for i_sensor in i_sensors:
-                max_val = max(
-                    max_val,
-                    sensors[i_sensor]
-                    * s_a_s_occurrences[i_sensor, i_action, i_outcome]
-                    / (s_a_occurrences[i_sensor, i_action] + 1),
-                )
-            predictions[i_action, i_outcome] = max_val
