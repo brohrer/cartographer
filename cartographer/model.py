@@ -16,7 +16,8 @@ class NaiveCartographer(object):
         n_sensors=None,
         n_actions=None,
         n_rewards=1,
-        feature_decay_rate=0.35,
+        feature_decay_rate=1.0,
+        trace_decay_rate=0.3,
         reward_update_rate=0.01,  # a.k.a. learning_rate
     ):
         self.n_features = n_sensors
@@ -59,11 +60,14 @@ class NaiveCartographer(object):
         transition_size = (self.n_features, self.n_actions, self.n_outcomes)
         self.s_a_s_occurrences = np.zeros(transition_size)
 
-        # The rate at which feature activity and
-        # feature-action pair activity decays between time steps
+        # The rate at which feature activity decays between time steps.
+        # If it's less than one, it lets feature activity persist somewhat.
+        self.feature_decay_rate = feature_decay_rate
+
+        # The rate at which feature-action pair activity decays between time steps
         # for the purpose of estimating and attributing reward and
         # predicting and modeling the outcome.
-        self.feature_decay_rate = feature_decay_rate
+        self.trace_decay_rate = trace_decay_rate
 
         # The rate at which new observations of reward are incorporated into
         # the running estimate.
@@ -134,7 +138,7 @@ class NaiveCartographer(object):
         self.actions = np.concatenate((actions, np.array([inaction, average_action])))
 
         # Update feature-action pairs
-        self.s_a_activities = self.s_a_activities * (1 - self.feature_decay_rate)
+        self.s_a_activities = self.s_a_activities * (1 - self.trace_decay_rate)
         new_s_a_activities = (
             self.feature_activities[:, np.newaxis] * self.actions[np.newaxis, :]
         )

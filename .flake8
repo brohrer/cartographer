@@ -1,0 +1,19 @@
+[flake8]
+# Leave formatting to black
+# E203, whitespace before ':'
+# E303, too many blank lines
+# E501, line too long
+# W291, trailing whitespace
+# W503, line break before binary operator
+# W504, line break after binary operator
+ignore = E203,E303,E501,W291,W503,W504
+
+max-line-length = 88
+
+per-file-ignores =
+    __init__.py:F401
+    sandbox/*.py:F401
+
+exclude = .git,__pycache__,archive,build,dist
+
+# max-complexity = 20

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cartographer"
-version = "2"
+version = "3"
 authors = [
   { name="Brandon Rohrer", email="brohrer@gmail.com" },
 ]
@@ -27,6 +27,7 @@ Documentation = "https://codeberg.org/brohrer/cartographer-paper/raw/branch/main
 README = "https://codeberg.org/brohrer/cartographer/src/branch/main/README.md"
 Repository = "https://codeberg.org/brohrer/cartographer.git"
 
+# configured via .flake8
 [tool.flake8]
 max-line-length = 88
 
