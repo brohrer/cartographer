@@ -1,16 +1,12 @@
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
 [project]
-name = "cartographer"
-version = "3"
+name = "naive-cartographer"
+version = "3.0.1"
 authors = [
   { name="Brandon Rohrer", email="brohrer@gmail.com" },
 ]
 description="A naive Bayes Markov decision process learner"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 dependencies = [
     "matplotlib",
     "numba",
@@ -27,12 +23,21 @@ Documentation = "https://codeberg.org/brohrer/cartographer-paper/raw/branch/main
 README = "https://codeberg.org/brohrer/cartographer/src/branch/main/README.md"
 Repository = "https://codeberg.org/brohrer/cartographer.git"
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cartographer"]
+
+[tool.hatch.build.targets.sdist]
+sources = ["src/myrtle"]
+
 # configured via .flake8
 [tool.flake8]
 max-line-length = 88
 
-# [tool.pytest.ini_options]
-# addopts = [
-#     "--import-mode=importlib",
-# ]
-
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.3.4",
+]

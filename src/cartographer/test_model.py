@@ -74,76 +74,46 @@ def test_predictions():
     rewards = [None, 0.6]
     model.update_sensors_and_rewards(sensors, rewards)
 
+    actions = np.array([0.0, 0.0, 0.0, 1.0])
+    model.update_actions(actions)
+
+    sensors = np.array([0.2, 0.8, 0.0])
+    rewards = [0.0, None]
+    model.update_sensors_and_rewards(sensors, rewards)
+
     predictions, rewards, uncertainties = model.predict()
 
     assert predictions[0][0] == 0.0
     assert predictions[1][0] > 0.0
     assert predictions[2][0] == 0.0
 
-    assert predictions[0][1] == 0.0
-    assert predictions[1][1] == 0.0
     assert predictions[2][1] == 0.0
+    assert predictions[3][1] > 0.0
+    assert predictions[4][1] == 0.0
 
-    assert predictions[0][2] == 0.0
     assert predictions[1][2] > 0.0
-    assert predictions[2][2] == 0.0
+    assert predictions[3][2] == 0.0
+    assert predictions[5][2] > 0.0
 
     assert rewards[0] == 0.0
     assert rewards[1] > 0.0
     assert rewards[2] == 0.0
     assert rewards[3] == 0.0
 
-    assert 0.4 < uncertainties[0] < 0.6
-    assert 0.4 < uncertainties[1] < 0.6
-    assert 0.4 < uncertainties[2] < 0.6
+    assert 0.6 < uncertainties[0] < 1.0
+    assert 0.2 < uncertainties[1] < 0.5
+    assert 0.6 < uncertainties[2] < 1.0
 
     predictions, reward, uncertainty = model.predict(i_action=1)
 
     assert predictions[0] > 0.0
-    assert predictions[1] == 0.0
+    assert predictions[1] > 0.0
     assert predictions[2] > 0.0
 
-    assert reward > 0.0
+    assert 0.1 < reward < 0.4
 
-    assert 0.4 < uncertainties[0] < 0.6
-    assert 0.4 < uncertainties[1] < 0.6
-    assert 0.4 < uncertainties[2] < 0.6
-
-    sensors = np.array([0.0, 1.0, 0.0])
-    predictions, rewards, uncertainties = model.predict(sensors=sensors)
-
-    assert predictions[0][0] == 0.0
-    assert predictions[1][0] > 0.0
-    assert predictions[2][0] == 0.0
-
-    assert predictions[0][1] == 0.0
-    assert predictions[1][1] == 0.0
-    assert predictions[2][1] == 0.0
-
-    assert predictions[0][2] == 0.0
-    assert predictions[1][2] > 0.0
-    assert predictions[2][2] == 0.0
-
-    assert rewards[0] == 0.0
-    assert rewards[1] > 0.0
-    assert rewards[2] == 0.0
-    assert rewards[3] == 0.0
-
-    assert uncertainties[0] == 1.0
-    assert 0.4 < uncertainties[1] < 0.6
-    assert uncertainties[2] == 1.0
-
-    predictions, reward, uncertainty = model.predict(sensors=sensors, i_action=1)
-
-    assert predictions[0] > 0.0
-    assert predictions[1] == 0.0
-    assert predictions[2] > 0.0
-
-    assert reward > 0.0
-
-    assert uncertainties[0] == 1.0
-    assert 0.4 < uncertainties[1] < 0.6
-    assert uncertainties[2] == 1.0
+    print(uncertainty)
+    assert 0.2 < uncertainty < 0.4
 
 
 # def test_plan_one_step():

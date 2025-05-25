@@ -7,14 +7,8 @@ The "model" part of a model-based reinforcement learning algorithm.
 Pull down the FNC repository.
 At the command line: 
 
-```python
-git clone git@codeberg.org:brohrer/cartographer.git
 ```
-
-Install it.
-
-```python
-python3 -m pip install -e cartographer
+uv add naive-cartographer
 ```
 
 ## Usage
@@ -44,6 +38,13 @@ class Agent
         return actions
 ```
 
+## Testing
+
+Run some unit tests with
+
+```
+uv run pytest
+```
 
 ## About
 
